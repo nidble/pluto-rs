@@ -1,7 +1,7 @@
 version: '3.6'
 services:
   postgres:
-    image: postgres:12
+    image: postgres:14
     restart: always
     volumes:
     - db_data:/var/lib/postgresql/data
@@ -17,13 +17,25 @@ services:
     restart: always
     environment:
       ## postgres database to store Hasura metadata
+      HASURA_GRAPHQL_DATABASE_URL: ${HASURA_GRAPHQL_DATABASE_URL}
       HASURA_GRAPHQL_METADATA_DATABASE_URL: ${HASURA_GRAPHQL_METADATA_DATABASE_URL}
       ## enable the console served by server
       HASURA_GRAPHQL_ENABLE_CONSOLE: ${HASURA_GRAPHQL_ENABLE_CONSOLE}
       HASURA_GRAPHQL_DEV_MODE: ${HASURA_GRAPHQL_DEV_MODE}
       HASURA_GRAPHQL_ENABLED_LOG_TYPES: ${HASURA_GRAPHQL_ENABLED_LOG_TYPES}
       ## uncomment next line to set an admin secret
-      # HASURA_GRAPHQL_ADMIN_SECRET:
+      HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
+  migration:
+    image: hasura/graphql-engine:v2.0.10.cli-migrations-v3
+    depends_on:
+    - "graphql-engine"
+    volumes:
+    - ./hasura/migrations:/hasura-migrations
+    - ./hasura/metadata:/hasura-metadata
+    environment:
+      ## postgres database to store Hasura metadata
+      HASURA_GRAPHQL_DATABASE_URL: ${HASURA_GRAPHQL_DATABASE_URL}
+      HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
 volumes:
   db_data:
 
