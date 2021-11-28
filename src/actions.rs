@@ -1,7 +1,7 @@
 
 use std::{convert::Infallible, marker::{Sync, Send}};
 use serde::{Serialize};
-use rweb::{Rejection, Reply, get, hyper::StatusCode, post};
+use rweb::{Rejection, Reply, hyper::StatusCode, post};
 use crate::model::{Exchange, ExchangeRepo};
 use log::{Level, log};
 

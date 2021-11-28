@@ -1,0 +1,26 @@
+{
+  "db": "PostgreSQL",
+  "549d7a23a1731aadcbe1cd1028bf40b377740aadf13bf822ee6f741916605199": {
+    "query": "\nINSERT INTO exchanges ( amount_from, amount_to, currency_from, currency_to ) VALUES ( $1, $2, $3, $4 )\nRETURNING id\n        ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Money",
+          "Money",
+          "Bpchar",
+          "Bpchar"
+        ]
+      },
+      "nullable": [
+        false
+      ]
+    }
+  }
+}
