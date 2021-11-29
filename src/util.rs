@@ -1,5 +1,6 @@
 use anyhow::{bail, Result};
 use rust_decimal::Decimal;
+use rust_decimal::prelude::*;
 use rusty_money::{ExchangeRate, Money, MoneyError, iso::{self, Currency}};
 use rust_decimal_macros::dec;
 
@@ -20,43 +21,41 @@ impl ConversionRate for Currency {
     }
 }
 
-pub fn exchange(from: String, to: String, amount: i64) -> Result<Decimal> {
+pub fn exchange(from: &str, to: &str, amount: i64) -> Result<i64> {
     let iso_from = iso::find(&from).ok_or(MoneyError::InvalidCurrency)?;
     let iso_to = iso::find(&to).ok_or(MoneyError::InvalidCurrency)?;
     
     let rate = iso_from.get_rate_for(iso_to)?;
-    let ok = ExchangeRate::new(iso_from, iso_to, rate)?
+    let amount = ExchangeRate::new(iso_from, iso_to, rate)?
         .convert(Money::from_minor(amount * 100, iso_from))
         .map(|money| money.amount().clone())?;
     
-    Ok(ok)
+    amount.to_i64().ok_or(anyhow::anyhow!("Conversion failed for {}", amount))
 }
 
 #[cfg(test)]
 mod tests {
-    use rust_decimal_macros::dec;
-
     use super::exchange;
 
     #[test]
     fn test_exchange_usd_eur_works() {
         let amount = 10;
-        let eur = exchange("USD".to_string(), "EUR".to_string(), amount.into()).unwrap();
+        let eur = exchange("USD", "EUR", amount.into()).unwrap();
 
-        assert_eq!(eur, dec!(8.6207));
+        assert_eq!(eur, 8.6207 as i64);
     }
 
     #[test]
     fn test_exchange_eur_usd_works() {
         let amount = 10;
-        let usd = exchange("EUR".to_string(), "USD".to_string(), amount.into()).unwrap();
-        assert_eq!(usd, dec!(11.31857));
+        let usd = exchange("EUR", "USD", amount.into()).unwrap();
+        assert_eq!(usd, 11.31857 as i64);
     }
 
     #[test]
     fn test_exchange_others_not_works() {
         let amount = 10;
-        let change = exchange("EUR".to_string(), "CAD".to_string(), amount.into());
+        let change = exchange("EUR", "CAD", amount.into());
         assert!(change.is_err());
     }
 }

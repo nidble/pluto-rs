@@ -5,6 +5,7 @@ use log::{Level, log};
 
 mod model;
 mod actions;
+mod util;
 
 /// Provides a RESTful web server managing Exchange.
 ///
