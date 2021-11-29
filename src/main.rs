@@ -11,7 +11,6 @@ mod util;
 ///
 /// API will be:
 ///
-/// - `GET /exchanges`: return a JSON list of exchanges.
 /// - `POST /exchanges`: create a new Exchange.
 #[tokio::main]
 async fn main()-> anyhow::Result<()> {

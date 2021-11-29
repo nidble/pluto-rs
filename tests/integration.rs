@@ -20,7 +20,7 @@ mod tests {
             .connect(&database_url).await.unwrap();
     
         let api = new_exchange(PostgresExchangeRepo::new(pool).clone());
-            let body = r#"{"currencyFrom": "EUR", "currencyTo": "USD", "amount": 123}"#;
+            let body = r#"{"currencyFrom": "EUR", "currencyTo": "USD", "amountFrom": 123, "createdAt": "2012-04-23T18:25:43.511Z"}"#;
             let res = request().method("POST").body(body).path("/exchanges").reply(&api).await;
 
         assert_eq!(res.status(), 201, "POST works");

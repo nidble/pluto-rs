@@ -1,27 +1,24 @@
 use std::sync::Arc;
+use chrono::{DateTime, Utc};
 use serde::{Serialize, Deserialize};
-use rweb::Schema;
 use async_trait::async_trait;
 use sqlx::postgres::PgPool;
 use sqlx::postgres::types::PgMoney;
 use uuid_::Uuid;
 
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Schema)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Exchange {
+    pub created_at: DateTime<Utc>,
     pub currency_from: String,
     pub currency_to: String,
-    pub amount: i64,
+    pub amount_from: i64,
 }
 #[async_trait]
 pub trait ExchangeRepo {
-    // fn get(&self) -> Arc<PgPool>;
-
     async fn ping(&self) -> anyhow::Result<()>;
 
     async fn add_exchange(&self, exchange: Exchange, new_value: i64) -> anyhow::Result<Uuid>;
-
-    async fn fetch_exchanges(&self) -> anyhow::Result<()>;
 }
 
 #[derive(Clone)]
@@ -46,17 +43,13 @@ impl ExchangeRepo for PostgresExchangeRepo {
     async fn add_exchange(&self, e: Exchange, new_value: i64) -> anyhow::Result<Uuid> {
         let rec = sqlx::query!(
             r#"
-INSERT INTO exchanges ( amount_from, amount_to, currency_from, currency_to ) VALUES ( $1, $2, $3, $4 )
+INSERT INTO exchanges ( amount_from, amount_to, currency_from, currency_to, created_at ) VALUES ( $1, $2, $3, $4, $5 )
 RETURNING id
         "#,
-            PgMoney::from(e.amount), PgMoney::from(new_value), e.currency_from, e.currency_to 
+            PgMoney::from(e.amount_from), PgMoney::from(new_value), e.currency_from, e.currency_to, e.created_at  
         )
         .fetch_one(&*self.pg_pool).await?;
 
         Ok(rec.id)
-    }
-
-    async fn fetch_exchanges(&self) -> anyhow::Result<()> {
-        Ok(())
     }
 }

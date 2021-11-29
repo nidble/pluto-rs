@@ -31,7 +31,7 @@ pub async fn new_exchange(#[data] api: impl ExchangeRepo + Clone + Send + Sync, 
     let json = std::str::from_utf8(&body).map_err(|err| format_error(err, 1001))?;
     let exchange: Exchange = serde_json::from_str(&json).map_err(|err| format_error(err, 1002))?;
 
-    let amount = util::exchange(&exchange.currency_from, &exchange.currency_to, exchange.amount).map_err(|err| format_error(err, 1003))?;
+    let amount = util::exchange(&exchange.currency_from, &exchange.currency_to, exchange.amount_from).map_err(|err| format_error(err, 1003))?;
     let result = api.add_exchange(exchange, amount).await.map_err(|err| format_error(err, 1004))?;
 
     let reply = rweb::reply::json(&json!({"uuid": result}));
@@ -79,7 +79,6 @@ mod tests {
     impl ExchangeRepo for Arc<Mutex<MockPostgresExchangeRepo>> {
         async fn ping(&self) -> anyhow::Result<()> { todo!() }
         async fn add_exchange(&self, _exchange: Exchange, _new_value: i64) -> anyhow::Result<Uuid> { Ok(Uuid::default()) }
-        async fn fetch_exchanges(&self) -> anyhow::Result<()> { Ok(()) }
     }
 
     #[tokio::test]
@@ -89,7 +88,7 @@ mod tests {
             .returning(|_, _| Ok(Uuid::default()));
         let repo = Arc::new(Mutex::new(repo));
         let api = new_exchange(repo.clone());
-        let body = r#"{"currencyFrom": "EUR", "currencyTo": "USD", "amount": 123}"#;
+        let body = r#"{"currencyFrom": "EUR", "currencyTo": "USD", "amountFrom": 123, "createdAt": "2012-04-23T18:25:43.511Z"}"#;
 
         let res = request()
             .method("POST")
