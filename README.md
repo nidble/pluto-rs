@@ -1,6 +1,6 @@
 # Pluto
 
-Pluto is a RESTful app that can accept "currency" values uploaded by the user. Such values are then converted and stored into a Postgres table. Pluto embraces twelve factors, cutting-edge performances, and idiomatic Rust programming.
+Pluto is a RESTful app that can accept "currency" values uploaded by the user. Such values are then converted and stored into a Postgres table.
 
 ## Tech
 
@@ -13,6 +13,12 @@ Pluto uses a number of open source projects to work properly:
 
 And of course Pluto itself is open source with a [public repository][pluto] on GitHub.
 
+## TLDR
+
+- After executing the RESTful server a route capable to perform the currency conversion will be exposed at `<basePath>/exchanges` by issuing a `POST` request. 
+- The payload must contain the following keys: `currencyFrom`, `currencyTo`, `amountFrom`, `createdAt`. 
+- For basic usage and examples please refer to the following sections: [Docker](https://github.com/nidble/pluto-rs#docker), [Curl examples](https://github.com/nidble/pluto-rs#curl-examples).
+
 ## Installation
 
 Pluto requires [Rust](https://www.rust-lang.org/) v1.56+ toolchain, [Hasura] v2+, and [Postgres] v14+ to run. 
@@ -24,14 +30,14 @@ Install the Rust runtime following respective documentation. Then move on repo f
 cp .env.example .env
 ```
 
-Now in order to compile/execute the Rest server, a running instance of Postgres, with the respective and updated schema must be provided. 
-This is required because thanks to [SQLx] during compilation steps our code issue a compilation error if our querys are not compatible with the running Postgres Schema. For furthers information, please refer to [compile-time-verification](https://github.com/launchbadge/sqlx#compile-time-verification)
+Now in order to compile/execute the RESTful server, a running instance of Postgres, with the respective and updated schema must be provided. 
+This is required because thanks to [SQLx] during compilation steps our code issue a compilation error if our queries are not compatible with the running Postgres Schema. For further information, please refer to [compile-time-verification](https://github.com/launchbadge/sqlx#compile-time-verification)
 
 This step can be accomplished in various ways, I suggest to:
 - Performing Migration on the host system and then executing Hasura with Docker:
    * move on `hasura` folder and then start Hasura using [Docker](https://hasura.io/docs/latest/graphql/core/getting-started/docker-simple.html). 
-   * then, after installing [Hasura-Cli] you can progress appling the respective [migrations](https://hasura.io/docs/latest/graphql/core/hasura-cli/hasura_migrate.html).
-- Performing Migration and Hasura directly from Docker, please refer to [docker-compose.yml][public repository][pluto]
+   * then, after installing [Hasura-Cli] you can progress applying the respective [migrations](https://hasura.io/docs/latest/graphql/core/hasura-cli/hasura_migrate.html).
+- Performing Migration with Hasura directly from Docker, please refer to [docker-compose.yml](https://github.com/nidble/pluto-rs/blob/master/docker-compose.yml) and below Docker [section](https://github.com/nidble/pluto-rs#docker)
 
 ## Server compilation and execution
 ### for development: 
@@ -45,7 +51,7 @@ cargo build --release
 ./target/release/pluto-rs
 ```
 
-## ENVriomental variables
+## Enviromental variables
 
 What follows is a table of principal variables and some examples
 

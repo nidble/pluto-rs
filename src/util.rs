@@ -18,7 +18,7 @@ impl ConversionRate for Currency {
             ("USD", "USD") => Ok(dec!(1)),
             ("EUR", "USD") => Ok(dec!(1.131857)),
             ("USD", "EUR") => Ok(dec!(0.86207)),
-            _ => bail!("Currency not supported yet! :(, please add PR to support it!")
+            _ => bail!("Currency not supported yet! :( Feel free to open a PR :)!")
         }
     }
 }

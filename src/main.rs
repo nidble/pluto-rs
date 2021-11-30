@@ -7,11 +7,6 @@ mod model;
 mod actions;
 mod util;
 
-/// Provides a RESTful web server managing Exchange.
-///
-/// API will be:
-///
-/// - `POST /exchanges`: create a new Exchange.
 #[tokio::main]
 async fn main()-> anyhow::Result<()> {
     dotenv().ok();
