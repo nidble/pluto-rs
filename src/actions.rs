@@ -6,6 +6,7 @@ use log::{Level, log};
 
 use crate::model::{Exchange, ExchangeRepo};
 use crate::util;
+
 /// An API error serializable to JSON.
 #[derive(Serialize, Debug)]
 struct ErrorMessage {
@@ -15,7 +16,6 @@ struct ErrorMessage {
     internal_code: Option<u16>,
 }
 impl rweb::reject::Reject for ErrorMessage {}
-
 
 fn format_error<E: std::fmt::Display>(err: E, internal_code: u16) -> Rejection {
     let error = ErrorMessage {
