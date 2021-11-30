@@ -2,8 +2,7 @@ use std::sync::Arc;
 use chrono::{DateTime, Utc};
 use serde::{Serialize, Deserialize};
 use async_trait::async_trait;
-use sqlx::postgres::PgPool;
-use sqlx::postgres::types::PgMoney;
+use sqlx::{postgres::PgPool, types::BigDecimal};
 use uuid_::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -46,7 +45,7 @@ impl ExchangeRepo for PostgresExchangeRepo {
 INSERT INTO exchanges ( amount_from, amount_to, currency_from, currency_to, created_at ) VALUES ( $1, $2, $3, $4, $5 )
 RETURNING id
         "#,
-            PgMoney::from(e.amount_from), PgMoney::from(new_value), e.currency_from, e.currency_to, e.created_at  
+            BigDecimal::from(e.amount_from), BigDecimal::from(new_value), e.currency_from, e.currency_to, e.created_at  
         )
         .fetch_one(&*self.pg_pool).await?;
 

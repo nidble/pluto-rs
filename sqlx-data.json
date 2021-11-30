@@ -1,7 +1,7 @@
 {
   "db": "PostgreSQL",
-  "549d7a23a1731aadcbe1cd1028bf40b377740aadf13bf822ee6f741916605199": {
-    "query": "\nINSERT INTO exchanges ( amount_from, amount_to, currency_from, currency_to ) VALUES ( $1, $2, $3, $4 )\nRETURNING id\n        ",
+  "a59ac21d45c7ffdb7bc4c63538ed9b0b0bded3e4e4f241a351e29517752a8c1a": {
+    "query": "\nINSERT INTO exchanges ( amount_from, amount_to, currency_from, currency_to, created_at ) VALUES ( $1, $2, $3, $4, $5 )\nRETURNING id\n        ",
     "describe": {
       "columns": [
         {
@@ -12,10 +12,11 @@
       ],
       "parameters": {
         "Left": [
-          "Money",
-          "Money",
+          "Numeric",
+          "Numeric",
           "Bpchar",
-          "Bpchar"
+          "Bpchar",
+          "Timestamptz"
         ]
       },
       "nullable": [

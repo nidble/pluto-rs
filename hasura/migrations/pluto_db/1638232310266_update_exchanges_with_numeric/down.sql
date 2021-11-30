@@ -1,0 +1,3 @@
+ALTER TABLE assets 
+    ALTER COLUMN amount_from TYPE MONEY,
+    ALTER COLUMN amount_to TYPE MONEY;

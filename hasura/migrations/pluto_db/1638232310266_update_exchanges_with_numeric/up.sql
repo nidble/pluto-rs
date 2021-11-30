@@ -1,0 +1,3 @@
+ALTER TABLE exchanges 
+    ALTER COLUMN amount_from TYPE NUMERIC,
+    ALTER COLUMN amount_to TYPE NUMERIC;
