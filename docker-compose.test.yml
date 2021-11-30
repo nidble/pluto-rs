@@ -10,6 +10,5 @@ services:
     - "migration"
     command: "cargo test --test integration"
     environment:
-      ## postgres database to store Hasura metadata
       DATABASE_URL: ${DATABASE_URL}
 

@@ -17,7 +17,7 @@ RUN rm ./target/release/deps/pluto_rs*
 RUN cargo build --release --bin pluto-rs
 
 
-FROM debian:buster-slim
+FROM debian:bookworm-slim
 ARG APP=/usr/src/app
 
 EXPOSE 3030

@@ -7,3 +7,5 @@ services:
     - "3030:3030"
     depends_on:
     - "migration"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
