@@ -1,11 +1,21 @@
 use std::{convert::Infallible, marker::{Sync, Send}};
-use serde::Serialize;
+use chrono::{DateTime, Utc};
+use serde::{Serialize, Deserialize};
 use rweb::{Rejection, Reply, hyper::StatusCode, post};
 use serde_json::json;
 use log::{Level, log};
 
-use crate::model::{Exchange, ExchangeRepo};
+use crate::model::ExchangeRepo;
 use crate::util;
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BodyData {
+    pub created_at: DateTime<Utc>,
+    pub currency_from: String,
+    pub currency_to: String,
+    pub amount_from: f64,
+}
 
 /// An API error serializable to JSON.
 #[derive(Serialize, Debug)]
@@ -29,12 +39,12 @@ fn format_error<E: std::fmt::Display>(err: E, internal_code: u16) -> Rejection {
 #[post("/exchanges")]
 pub async fn new_exchange(#[data] api: impl ExchangeRepo + Clone + Send + Sync, #[body] body: bytes::Bytes) -> Result<impl Reply, Rejection> {
     let json = std::str::from_utf8(&body).map_err(|err| format_error(err, 1001))?;
-    let exchange: Exchange = serde_json::from_str(&json).map_err(|err| format_error(err, 1002))?;
+    let exchange: BodyData = serde_json::from_str(&json).map_err(|err| format_error(err, 1002))?;
 
     let amount = util::exchange(&exchange.currency_from, &exchange.currency_to, exchange.amount_from).map_err(|err| format_error(err, 1003))?;
     let result = api.add_exchange(exchange, amount).await.map_err(|err| format_error(err, 1004))?;
 
-    let reply = rweb::reply::json(&json!({"uuid": result}));
+    let reply = rweb::reply::json(&result);
 
     Ok(rweb::reply::with_status(reply, rweb::http::StatusCode::CREATED))
 }
@@ -63,29 +73,26 @@ mod tests {
     use mockall::predicate::*;
     use async_trait::async_trait;
 
-    use uuid_::Uuid;
-    use crate::model::Exchange;
-
-    use super::super::model::ExchangeRepo;
-    use super::{handle_rejection, new_exchange};
+    use crate::model::{ExchangeRepo, Exchange};
+    use super::{BodyData, handle_rejection, new_exchange};
 
     mock! {
         pub PostgresExchangeRepo {
-            fn add_exchange(&self, _exchange: Exchange, _new_value: i64) -> anyhow::Result<Uuid>;
+            fn add_exchange(&self, _exchange: BodyData, _new_value: f64) -> anyhow::Result<Exchange>;
         }
     }
 
     #[async_trait]
     impl ExchangeRepo for Arc<Mutex<MockPostgresExchangeRepo>> {
         async fn ping(&self) -> anyhow::Result<()> { todo!() }
-        async fn add_exchange(&self, _exchange: Exchange, _new_value: i64) -> anyhow::Result<Uuid> { Ok(Uuid::default()) }
+        async fn add_exchange(&self, _exchange: BodyData, _new_value: f64) -> anyhow::Result<Exchange> { Ok(Exchange::default()) }
     }
 
     #[tokio::test]
     async fn test_create_exchange() {
         let mut repo = MockPostgresExchangeRepo::new();
         repo.expect_add_exchange()
-            .returning(|_, _| Ok(Uuid::default()));
+            .returning(|_, _| Ok(Exchange::default()));
         let repo = Arc::new(Mutex::new(repo));
         let api = new_exchange(repo.clone());
         let body = r#"{"currencyFrom": "EUR", "currencyTo": "USD", "amountFrom": 123, "createdAt": "2012-04-23T18:25:43.511Z"}"#;
@@ -105,7 +112,7 @@ mod tests {
     #[tokio::test]
     async fn test_reject_create_exchange() {
         let mut repo = MockPostgresExchangeRepo::new();
-        repo.expect_add_exchange().times(0).returning(|_, _| Ok(Uuid::default()));
+        repo.expect_add_exchange().times(0).returning(|_, _| Ok(Exchange::default()));
         let repo = Arc::new(Mutex::new(repo));
         let api = new_exchange(repo.clone()).recover(handle_rejection);
         let body = r#"{"wrong": true}"#;

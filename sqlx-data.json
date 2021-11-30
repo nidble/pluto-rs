@@ -1,13 +1,38 @@
 {
   "db": "PostgreSQL",
-  "a59ac21d45c7ffdb7bc4c63538ed9b0b0bded3e4e4f241a351e29517752a8c1a": {
-    "query": "\nINSERT INTO exchanges ( amount_from, amount_to, currency_from, currency_to, created_at ) VALUES ( $1, $2, $3, $4, $5 )\nRETURNING id\n        ",
+  "bc6c6efeb468d65aa646449350ac9908970e3d99670dceb3f5d0df0820b6a582": {
+    "query": "\nINSERT INTO exchanges ( amount_from, amount_to, currency_from, currency_to, created_at ) VALUES ( $1, $2, $3, $4, $5 )\nRETURNING id, amount_from, amount_to, currency_from, currency_to, created_at\n        ",
     "describe": {
       "columns": [
         {
           "ordinal": 0,
           "name": "id",
           "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "amount_from",
+          "type_info": "Numeric"
+        },
+        {
+          "ordinal": 2,
+          "name": "amount_to",
+          "type_info": "Numeric"
+        },
+        {
+          "ordinal": 3,
+          "name": "currency_from",
+          "type_info": "Bpchar"
+        },
+        {
+          "ordinal": 4,
+          "name": "currency_to",
+          "type_info": "Bpchar"
+        },
+        {
+          "ordinal": 5,
+          "name": "created_at",
+          "type_info": "Timestamptz"
         }
       ],
       "parameters": {
@@ -20,6 +45,11 @@
         ]
       },
       "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
         false
       ]
     }
