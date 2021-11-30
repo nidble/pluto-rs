@@ -64,7 +64,7 @@ impl Default for Exchange {
 pub trait ExchangeRepo {
     async fn ping(&self) -> anyhow::Result<()>;
 
-    async fn add_exchange(&self, exchange: BodyData, new_value: f64) -> anyhow::Result<Exchange>;
+    async fn add_exchange(&self, body_data: BodyData, new_value: f64) -> anyhow::Result<Exchange>;
 }
 
 #[derive(Clone)]
@@ -86,15 +86,15 @@ impl ExchangeRepo for PostgresExchangeRepo {
         Ok(())
     }
 
-    async fn add_exchange(&self, e: BodyData, new_value: f64) -> anyhow::Result<Exchange> {
-        let from = Exchange::to_bigdecimal(e.amount_from);
+    async fn add_exchange(&self, body_data: BodyData, new_value: f64) -> anyhow::Result<Exchange> {
+        let from = Exchange::to_bigdecimal(body_data.amount_from);
         let to = Exchange::to_bigdecimal(new_value);
         let exchange = sqlx::query_as!(Exchange,
             r#"
 INSERT INTO exchanges ( amount_from, amount_to, currency_from, currency_to, created_at ) VALUES ( $1, $2, $3, $4, $5 )
 RETURNING id, amount_from, amount_to, currency_from, currency_to, created_at
         "#,
-            from, to, e.currency_from, e.currency_to, e.created_at  
+            from, to, body_data.currency_from, body_data.currency_to, body_data.created_at  
         )
         .fetch_one(&*self.pg_pool).await?;
 

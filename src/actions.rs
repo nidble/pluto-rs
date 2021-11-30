@@ -39,10 +39,10 @@ fn format_error<E: std::fmt::Display>(err: E, internal_code: u16) -> Rejection {
 #[post("/exchanges")]
 pub async fn new_exchange(#[data] api: impl ExchangeRepo + Clone + Send + Sync, #[body] body: bytes::Bytes) -> Result<impl Reply, Rejection> {
     let json = std::str::from_utf8(&body).map_err(|err| format_error(err, 1001))?;
-    let exchange: BodyData = serde_json::from_str(&json).map_err(|err| format_error(err, 1002))?;
+    let bd: BodyData = serde_json::from_str(&json).map_err(|err| format_error(err, 1002))?;
 
-    let amount = util::exchange(&exchange.currency_from, &exchange.currency_to, exchange.amount_from).map_err(|err| format_error(err, 1003))?;
-    let result = api.add_exchange(exchange, amount).await.map_err(|err| format_error(err, 1004))?;
+    let amount = util::exchange(&bd.currency_from, &bd.currency_to, bd.amount_from).map_err(|err| format_error(err, 1003))?;
+    let result = api.add_exchange(bd, amount).await.map_err(|err| format_error(err, 1004))?;
 
     let reply = rweb::reply::json(&result);
 
@@ -51,12 +51,16 @@ pub async fn new_exchange(#[data] api: impl ExchangeRepo + Clone + Send + Sync, 
 
 pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
     let (code, response) = if err.is_not_found() {
+
         (StatusCode::NOT_FOUND, json!({"message": "not found"}))
     } else if let Some(error) = err.find::<ErrorMessage>() {
+
         (StatusCode::BAD_REQUEST, json!({"message": &error.message, "internalCode": error.internal_code}))
     } else if err.find::<rweb::reject::MethodNotAllowed>().is_some() {
+
         (StatusCode::METHOD_NOT_ALLOWED, json!({"message": "method not allowed"}))
     } else {
+
         log!(Level::Error, "{}", format!("Unhandled rejection: {:?}", err));
         (StatusCode::INTERNAL_SERVER_ERROR, json!({"message": "internal server error"}))
     };
@@ -78,20 +82,26 @@ mod tests {
 
     mock! {
         pub PostgresExchangeRepo {
-            fn add_exchange(&self, _exchange: BodyData, _new_value: f64) -> anyhow::Result<Exchange>;
+            fn add_exchange(&self, body_data: BodyData, _new_value: f64) -> anyhow::Result<Exchange>;
         }
     }
 
     #[async_trait]
     impl ExchangeRepo for Arc<Mutex<MockPostgresExchangeRepo>> {
         async fn ping(&self) -> anyhow::Result<()> { todo!() }
-        async fn add_exchange(&self, _exchange: BodyData, _new_value: f64) -> anyhow::Result<Exchange> { Ok(Exchange::default()) }
+
+        async fn add_exchange(&self, body_data: BodyData, new_value: f64) -> anyhow::Result<Exchange> {
+            let this = self.lock().unwrap();
+            this.add_exchange(body_data, new_value)
+         }
+
     }
 
     #[tokio::test]
     async fn test_create_exchange() {
         let mut repo = MockPostgresExchangeRepo::new();
         repo.expect_add_exchange()
+            .times(1)
             .returning(|_, _| Ok(Exchange::default()));
         let repo = Arc::new(Mutex::new(repo));
         let api = new_exchange(repo.clone());
