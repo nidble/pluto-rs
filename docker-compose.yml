@@ -26,7 +26,7 @@ services:
       HASURA_GRAPHQL_DEV_MODE: ${HASURA_GRAPHQL_DEV_MODE}
       HASURA_GRAPHQL_ENABLED_LOG_TYPES: ${HASURA_GRAPHQL_ENABLED_LOG_TYPES}
       ## uncomment next line to set an admin secret
-      HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
+      HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET}
   migration:
     image: hasura/graphql-engine:v2.0.10.cli-migrations-v3
     depends_on:
@@ -37,14 +37,7 @@ services:
     environment:
       ## postgres database to store Hasura metadata
       HASURA_GRAPHQL_DATABASE_URL: ${HASURA_GRAPHQL_DATABASE_URL}
-      HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
-  plut_rs:
-    build: .
-    user: "ferris"
-    ports:
-    - "3030:3030"
-    depends_on:
-    - "migration"
+      HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET}
       
 volumes:
   db_data:

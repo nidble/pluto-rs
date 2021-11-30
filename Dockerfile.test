@@ -1,0 +1,20 @@
+FROM rust:1.56 as builder
+
+ENV APP_USER=ferris \
+    RUST_LOG=info \
+    SQLX_OFFLINE=true \
+    DATABASE_URL=
+
+RUN groupadd $APP_USER \
+    && useradd -g $APP_USER $APP_USER
+
+RUN USER=ferris cargo install sqlx-cli --no-default-features --features postgres
+RUN USER=ferris cargo new --bin pluto-rs
+
+WORKDIR /pluto-rs
+COPY . .
+
+RUN USER=ferris cargo test --bin pluto-rs
+# ADD . ./
+
+CMD ["cargo test --bin pluto-rs"]
