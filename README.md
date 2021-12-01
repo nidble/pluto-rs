@@ -99,8 +99,6 @@ For testing
 docker-compose -f docker-compose.yml -f docker-compose.test.yml up
 ```
 
-Eventualy adjust write permissions of upload folder.
-
 ## Curl Examples
 request a new exchange from EUR to USD:
 ```sh
