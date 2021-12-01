@@ -6,6 +6,7 @@ use log::{Level, log};
 mod model;
 mod actions;
 mod util;
+mod http_error;
 
 #[tokio::main]
 async fn main()-> anyhow::Result<()> {

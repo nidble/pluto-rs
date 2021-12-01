@@ -1,11 +1,12 @@
 use std::{convert::Infallible, marker::{Sync, Send}};
 use chrono::{DateTime, Utc};
-use serde::{Serialize, Deserialize};
-use rweb::{Rejection, Reply, hyper::StatusCode, post};
+use serde::Deserialize;
+use rweb::{Rejection, Reply, post};
 use serde_json::json;
 use log::{Level, log};
 
 use crate::model::ExchangeRepo;
+use crate::http_error::{HttpError, ErrorMessage};
 use crate::util;
 
 #[derive(Debug, Deserialize)]
@@ -16,16 +17,6 @@ pub struct BodyData {
     pub currency_to: String,
     pub amount_from: f64,
 }
-
-/// An API error serializable to JSON.
-#[derive(Serialize, Debug)]
-struct ErrorMessage {
-    code: Option<u16>,
-    message: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    internal_code: Option<u16>,
-}
-impl rweb::reject::Reject for ErrorMessage {}
 
 fn format_error<E: std::fmt::Display>(err: E, internal_code: u16) -> Rejection {
     let error = ErrorMessage {
@@ -42,30 +33,23 @@ pub async fn new_exchange(#[data] api: impl ExchangeRepo + Clone + Send + Sync, 
     let bd: BodyData = serde_json::from_str(&json).map_err(|err| format_error(err, 1002))?;
 
     let amount = util::exchange(&bd.currency_from, &bd.currency_to, bd.amount_from).map_err(|err| format_error(err, 1003))?;
-    let result = api.add_exchange(bd, amount).await.map_err(|err| format_error(err, 1004))?;
+    let resp = api.add_exchange(bd, amount).await.map_err(|err| format_error(err, 1004))?;
 
-    let reply = rweb::reply::json(&result);
+    let reply = rweb::reply::json(&resp);
 
     Ok(rweb::reply::with_status(reply, rweb::http::StatusCode::CREATED))
 }
 
 pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
-    let (code, response) = if err.is_not_found() {
-
-        (StatusCode::NOT_FOUND, json!({"message": "not found"}))
-    } else if let Some(error) = err.find::<ErrorMessage>() {
-
-        (StatusCode::BAD_REQUEST, json!({"message": &error.message, "internalCode": error.internal_code}))
-    } else if err.find::<rweb::reject::MethodNotAllowed>().is_some() {
-
-        (StatusCode::METHOD_NOT_ALLOWED, json!({"message": "method not allowed"}))
-    } else {
-
-        log!(Level::Error, "{}", format!("Unhandled rejection: {:?}", err));
-        (StatusCode::INTERNAL_SERVER_ERROR, json!({"message": "internal server error"}))
+    let (code, resp) = match HttpError::resolve_rejection(&err) {
+        HttpError::NotFound(s) |
+        HttpError::InternalServerError(s) |
+        HttpError::MethodNotAllowed(s)  => (s, json!({"message": s.canonical_reason() })),
+        HttpError::BadRequest(s, e) => (s, json!({"message": e.message, "internalCode": e.internal_code })),
     };
 
-    Ok(rweb::reply::with_status(rweb::reply::json(&response), code))
+    log!(Level::Error, "{}", format!("Unhandled rejection: {:?}", err));
+    Ok(rweb::reply::with_status(rweb::reply::json(&resp), code))
 }
 
 #[cfg(test)]
