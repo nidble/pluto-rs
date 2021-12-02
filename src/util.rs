@@ -24,16 +24,16 @@ impl ConversionRate for Currency {
 }
 
 pub fn exchange(from: &str, to: &str, amount: f64) -> Result<f64> {
-    let iso_from = iso::find(&from).ok_or(MoneyError::InvalidCurrency)?;
-    let iso_to = iso::find(&to).ok_or(MoneyError::InvalidCurrency)?;
+    let iso_from = iso::find(from).ok_or(MoneyError::InvalidCurrency)?;
+    let iso_to = iso::find(to).ok_or(MoneyError::InvalidCurrency)?;
     let amount = Decimal::from_f64(amount).ok_or(MoneyError::InvalidAmount)?;
 
     let rate = iso_from.get_rate_for(iso_to)?;
     let amount = ExchangeRate::new(iso_from, iso_to, rate)?
         .convert(Money::from_decimal(amount, iso_from))
-        .map(|money| money.amount().clone())?;
+        .map(|money| *money.amount())?;
     
-    amount.to_f64().ok_or(anyhow::anyhow!("Conversion failed for {}", amount))
+    amount.to_f64().ok_or_else(|| anyhow::anyhow!("Conversion failed for {}", amount))
 }
 
 pub fn get_datetime_zero() -> DateTime<Utc> {

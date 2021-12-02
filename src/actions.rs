@@ -30,7 +30,7 @@ fn format_error<E: std::fmt::Display>(err: E, internal_code: u16) -> Rejection {
 #[post("/exchanges")]
 pub async fn new_exchange(#[data] api: impl ExchangeRepo + Clone + Send + Sync, #[body] body: bytes::Bytes) -> Result<impl Reply, Rejection> {
     let json = std::str::from_utf8(&body).map_err(|err| format_error(err, 1001))?;
-    let bd: BodyData = serde_json::from_str(&json).map_err(|err| format_error(err, 1002))?;
+    let bd: BodyData = serde_json::from_str(json).map_err(|err| format_error(err, 1002))?;
 
     let amount = util::exchange(&bd.currency_from, &bd.currency_to, bd.amount_from).map_err(|err| format_error(err, 1003))?;
     let resp = api.add_exchange(bd, amount).await.map_err(|err| format_error(err, 1004))?;
