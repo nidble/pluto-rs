@@ -77,17 +77,20 @@ mod tests {
         async fn add_exchange(&self, body_data: BodyData, new_value: f64) -> anyhow::Result<Exchange> {
             let this = self.lock().unwrap();
             this.add_exchange(body_data, new_value)
-         }
+        }
+    }
 
+    fn get_repo_mock(times: TimesRange) -> Arc<Mutex<MockPostgresExchangeRepo>> {
+        let mut repo = MockPostgresExchangeRepo::new();
+        repo.expect_add_exchange()
+            .times(times)
+            .returning(|_, _| Ok(Exchange::default()));
+        Arc::new(Mutex::new(repo))
     }
 
     #[tokio::test]
     async fn test_create_exchange() {
-        let mut repo = MockPostgresExchangeRepo::new();
-        repo.expect_add_exchange()
-            .times(1)
-            .returning(|_, _| Ok(Exchange::default()));
-        let repo = Arc::new(Mutex::new(repo));
+        let repo = get_repo_mock(1.into());
         let api = new_exchange(repo.clone());
         let body = r#"{"currencyFrom": "EUR", "currencyTo": "USD", "amountFrom": 123, "createdAt": "2012-04-23T18:25:43.511Z"}"#;
 
@@ -105,9 +108,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_reject_create_exchange() {
-        let mut repo = MockPostgresExchangeRepo::new();
-        repo.expect_add_exchange().times(0).returning(|_, _| Ok(Exchange::default()));
-        let repo = Arc::new(Mutex::new(repo));
+        let repo = get_repo_mock(0.into());
         let api = new_exchange(repo.clone()).recover(handle_rejection);
         let body = r#"{"wrong": true}"#;
 
