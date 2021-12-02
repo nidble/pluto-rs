@@ -18,8 +18,8 @@ pub(crate) enum HttpError<'a> {
     InternalServerError(StatusCode),
 }
 
-impl HttpError<'_> {
-    pub(crate) fn resolve_rejection<'a>(err: &'a Rejection) -> HttpError<'a> {
+impl <'a>HttpError<'a> {
+    pub(crate) fn resolve_rejection(err: &'a Rejection) -> HttpError<'a> {
         if err.is_not_found() {
             return HttpError::NotFound(StatusCode::NOT_FOUND);
         } 
