@@ -1,10 +1,13 @@
 use anyhow::{bail, Result};
 use chrono::DateTime;
 use chrono::Utc;
-use rust_decimal::Decimal;
 use rust_decimal::prelude::*;
-use rusty_money::{ExchangeRate, Money, MoneyError, iso::{self, Currency}};
+use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
+use rusty_money::{
+    iso::{self, Currency},
+    ExchangeRate, Money, MoneyError,
+};
 
 trait ConversionRate {
     fn get_rate_for(&self, foreign: &Currency) -> Result<Decimal>;
@@ -18,7 +21,7 @@ impl ConversionRate for Currency {
             ("USD", "USD") => Ok(dec!(1)),
             ("EUR", "USD") => Ok(dec!(1.131857)),
             ("USD", "EUR") => Ok(dec!(0.86207)),
-            _ => bail!("Currency not supported yet! :( Feel free to open a PR :)!")
+            _ => bail!("Currency not supported yet! :( Feel free to open a PR :)!"),
         }
     }
 }
@@ -32,13 +35,14 @@ pub fn exchange(from: &str, to: &str, amount: f64) -> Result<f64> {
     let amount = ExchangeRate::new(iso_from, iso_to, rate)?
         .convert(Money::from_decimal(amount, iso_from))
         .map(|money| *money.amount())?;
-    
-    amount.to_f64().ok_or_else(|| anyhow::anyhow!("Conversion failed for {}", amount))
+
+    amount
+        .to_f64()
+        .ok_or_else(|| anyhow::anyhow!("Conversion failed for {}", amount))
 }
 
 pub fn get_datetime_zero() -> DateTime<Utc> {
-    let zero = chrono::NaiveDate::from_ymd(1970, 1, 1)
-        .and_hms_milli(0, 0, 0, 0);
+    let zero = chrono::NaiveDate::from_ymd(1970, 1, 1).and_hms_milli(0, 0, 0, 0);
     DateTime::<Utc>::from_utc(zero, Utc)
 }
 
@@ -63,7 +67,6 @@ mod tests {
         assert_eq!(usd, 11.31857 as f64);
     }
 
-
     #[test]
     fn test_exchange_eur_usd2_works() {
         let amount = 1;
@@ -77,7 +80,6 @@ mod tests {
         let change = exchange("EUR", "CAD", amount.into());
         assert!(change.is_err());
     }
-
 
     #[test]
     fn test_datetime_zero_works() {

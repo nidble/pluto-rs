@@ -1,5 +1,5 @@
-use rweb::Rejection;
 use rweb::hyper::StatusCode;
+use rweb::Rejection;
 use serde::Serialize;
 
 #[derive(Serialize, Debug)]
@@ -18,12 +18,12 @@ pub(crate) enum HttpError<'a> {
     InternalServerError(StatusCode),
 }
 
-impl <'a>HttpError<'a> {
+impl<'a> HttpError<'a> {
     pub(crate) fn resolve_rejection(err: &'a Rejection) -> HttpError<'a> {
         if err.is_not_found() {
             return HttpError::NotFound(StatusCode::NOT_FOUND);
-        } 
-    
+        }
+
         if let Some(error) = err.find::<ErrorMessage>() {
             return HttpError::BadRequest(StatusCode::BAD_REQUEST, error);
         }

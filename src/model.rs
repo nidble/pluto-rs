@@ -1,8 +1,8 @@
-use std::sync::Arc;
 use chrono::{DateTime, Utc};
-use rust_decimal::prelude::{ToPrimitive, FromPrimitive};
-use serde::Serialize;
+use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
 use serde::ser::SerializeStruct;
+use serde::Serialize;
+use std::sync::Arc;
 
 use async_trait::async_trait;
 use sqlx::{postgres::PgPool, types::BigDecimal};
@@ -33,10 +33,11 @@ impl Exchange {
 impl Serialize for Exchange {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: serde::Serializer {
+        S: serde::Serializer,
+    {
         let mut state = serializer.serialize_struct("Exchange", 6)?;
         let created_at = if cfg!(test) { get_datetime_zero() } else { self.created_at };
-        
+
         state.serialize_field("id", &self.id)?;
         state.serialize_field("created_at", &created_at)?;
         state.serialize_field("currency_from", &self.currency_from)?;
@@ -55,7 +56,7 @@ impl Default for Exchange {
             currency_from: Default::default(),
             currency_to: Default::default(),
             amount_from: Default::default(),
-            amount_to: Default::default() 
+            amount_to: Default::default(),
         }
     }
 }
@@ -74,14 +75,19 @@ pub struct PostgresExchangeRepo {
 
 impl PostgresExchangeRepo {
     pub fn new(pg_pool: PgPool) -> Self {
-        Self { pg_pool: Arc::new(pg_pool) }
+        Self {
+            pg_pool: Arc::new(pg_pool),
+        }
     }
 }
 
 #[async_trait]
 impl ExchangeRepo for PostgresExchangeRepo {
     async fn ping(&self) -> anyhow::Result<()> {
-        sqlx::query("SELECT $1").bind(42).fetch_one(&*self.pg_pool).await?;
+        sqlx::query("SELECT $1")
+            .bind(42)
+            .fetch_one(&*self.pg_pool)
+            .await?;
 
         Ok(())
     }
@@ -94,7 +100,7 @@ impl ExchangeRepo for PostgresExchangeRepo {
 INSERT INTO exchanges ( amount_from, amount_to, currency_from, currency_to, created_at ) VALUES ( $1, $2, $3, $4, $5 )
 RETURNING id, amount_from, amount_to, currency_from, currency_to, created_at
         "#,
-            from, to, body_data.currency_from, body_data.currency_to, body_data.created_at  
+            from, to, body_data.currency_from, body_data.currency_to, body_data.created_at
         )
         .fetch_one(&*self.pg_pool).await?;
 
@@ -114,18 +120,26 @@ mod tests {
     #[test]
     fn test_exchange_serialize_works() {
         let exchange = Exchange::default();
-        let body = r#"{"id":"00000000-0000-0000-0000-000000000000","created_at":"1970-01-01T00:00:00Z","currency_from":"","currency_to":"","amount_from":0.0,"amount_to":0.0}"#; 
-        assert_eq!(serde_json::to_string(&exchange).unwrap_or_default(), body.to_string());
+        let body = r#"{"id":"00000000-0000-0000-0000-000000000000","created_at":"1970-01-01T00:00:00Z","currency_from":"","currency_to":"","amount_from":0.0,"amount_to":0.0}"#;
+        assert_eq!(
+            serde_json::to_string(&exchange).unwrap_or_default(),
+            body.to_string()
+        );
     }
 
     #[test]
     fn test_exchange_to_bigdecimal_works() {
-        assert_eq!(Exchange::to_bigdecimal(-123.0),  BigDecimal::from_str("-123.0000000000000").unwrap());
+        assert_eq!(
+            Exchange::to_bigdecimal(-123.0),
+            BigDecimal::from_str("-123.0000000000000").unwrap()
+        );
     }
-
 
     #[test]
     fn test_exchange_round_two_works() {
-        assert_eq!(Exchange::round_two(&BigDecimal::from_str("123.12").unwrap()), 123.12);
+        assert_eq!(
+            Exchange::round_two(&BigDecimal::from_str("123.12").unwrap()),
+            123.12
+        );
     }
 }
