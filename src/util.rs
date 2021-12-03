@@ -8,6 +8,36 @@ use rusty_money::{
     iso::{self, Currency},
     ExchangeRate, Money, MoneyError,
 };
+use sqlx::types::BigDecimal;
+
+pub(crate) trait ToBigDecimal {
+    fn to_bigdecimal(&self) -> BigDecimal;
+}
+
+impl ToBigDecimal for f64 {
+    fn to_bigdecimal(&self) -> BigDecimal {
+        BigDecimal::from_f64(*self).unwrap_or_default()
+    }
+}
+
+pub(crate) fn to_bigdecimal<F64: ToBigDecimal>(f: F64) -> BigDecimal{
+    F64::to_bigdecimal(&f)
+}
+
+pub(crate) trait RoundTwo {
+    fn round_two(&self) -> f64;
+}
+
+impl RoundTwo for BigDecimal {
+    fn round_two(&self) -> f64 {
+        let to = self.to_f64().unwrap_or_default();
+        (to * 100.0).round() / 100.0
+    }
+}
+
+pub(crate) fn round_two<R: RoundTwo>(value: &R) -> f64 {
+    R::round_two(value)
+}
 
 trait ConversionRate {
     fn get_rate_for(&self, foreign: &Currency) -> Result<Decimal>;
@@ -26,7 +56,7 @@ impl ConversionRate for Currency {
     }
 }
 
-pub fn exchange(from: &str, to: &str, amount: f64) -> Result<f64> {
+pub(crate) fn exchange(from: &str, to: &str, amount: f64) -> Result<f64> {
     let iso_from = iso::find(from).ok_or(MoneyError::InvalidCurrency)?;
     let iso_to = iso::find(to).ok_or(MoneyError::InvalidCurrency)?;
     let amount = Decimal::from_f64(amount).ok_or(MoneyError::InvalidAmount)?;
@@ -41,14 +71,16 @@ pub fn exchange(from: &str, to: &str, amount: f64) -> Result<f64> {
         .ok_or_else(|| anyhow::anyhow!("Conversion failed for {}", amount))
 }
 
-pub fn get_datetime_zero() -> DateTime<Utc> {
+pub(crate) fn get_datetime_zero() -> DateTime<Utc> {
     let zero = chrono::NaiveDate::from_ymd(1970, 1, 1).and_hms_milli(0, 0, 0, 0);
     DateTime::<Utc>::from_utc(zero, Utc)
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::util::get_datetime_zero;
+    use std::str::FromStr;
+    use sqlx::types::BigDecimal;
+    use crate::util::{round_two, get_datetime_zero, to_bigdecimal};
 
     use super::exchange;
 
@@ -85,5 +117,21 @@ mod tests {
     fn test_datetime_zero_works() {
         let expect = get_datetime_zero();
         assert_eq!(expect.to_string(), String::from("1970-01-01 00:00:00 UTC"));
+    }
+
+    #[test]
+    fn test_exchange_to_bigdecimal_works() {
+        assert_eq!(
+            to_bigdecimal(-123.0),
+            BigDecimal::from_str("-123.0000000000000").unwrap()
+        );
+    }
+
+    #[test]
+    fn test_exchange_round_two_works() {
+        assert_eq!(
+            round_two(&BigDecimal::from_str("123.12").unwrap()),
+            123.12
+        );
     }
 }

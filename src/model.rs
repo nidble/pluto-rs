@@ -1,5 +1,4 @@
 use chrono::{DateTime, Utc};
-use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
 use serde::ser::SerializeStruct;
 use serde::Serialize;
 use std::sync::Arc;
@@ -8,7 +7,7 @@ use async_trait::async_trait;
 use sqlx::{postgres::PgPool, types::BigDecimal};
 use uuid_::Uuid;
 
-use crate::{actions::BodyData, util::get_datetime_zero};
+use crate::{actions::BodyData, util::{get_datetime_zero, round_two, to_bigdecimal}};
 
 pub struct Exchange {
     pub id: Uuid,
@@ -17,34 +16,6 @@ pub struct Exchange {
     pub currency_to: String,
     pub amount_from: BigDecimal,
     pub amount_to: BigDecimal,
-}
-
-trait ToBigDecimal {
-    fn to_bigdecimal(&self) -> BigDecimal;
-}
-
-impl ToBigDecimal for f64 {
-    fn to_bigdecimal(&self) -> BigDecimal {
-        BigDecimal::from_f64(*self).unwrap_or_default()
-    }
-}
-
-fn to_bigdecimal<F64: ToBigDecimal>(f: F64) -> BigDecimal{
-    F64::to_bigdecimal(&f)
-}
-trait RoundTwo {
-    fn round_two(&self) -> f64;
-}
-
-impl RoundTwo for BigDecimal {
-    fn round_two(&self) -> f64 {
-        let to = self.to_f64().unwrap_or_default();
-        (to * 100.0).round() / 100.0
-    }
-}
-
-fn round_two<R: RoundTwo>(value: &R) -> f64 {
-    R::round_two(value)
 }
 
 impl Serialize for Exchange {
@@ -81,7 +52,6 @@ impl Default for Exchange {
 #[async_trait]
 pub trait ExchangeRepo {
     async fn ping(&self) -> anyhow::Result<()>;
-
     async fn add_exchange(&self, body_data: BodyData, new_value: f64) -> anyhow::Result<Exchange>;
 }
 
@@ -127,13 +97,7 @@ RETURNING id, amount_from, amount_to, currency_from, currency_to, created_at
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
-
     use serde_json;
-    use sqlx::types::BigDecimal;
-
-    use crate::model::{round_two, to_bigdecimal};
-
     use super::Exchange;
 
     #[test]
@@ -143,22 +107,6 @@ mod tests {
         assert_eq!(
             serde_json::to_string(&exchange).unwrap_or_default(),
             body.to_string()
-        );
-    }
-
-    #[test]
-    fn test_exchange_to_bigdecimal_works() {
-        assert_eq!(
-            to_bigdecimal(-123.0),
-            BigDecimal::from_str("-123.0000000000000").unwrap()
-        );
-    }
-
-    #[test]
-    fn test_exchange_round_two_works() {
-        assert_eq!(
-            round_two(&BigDecimal::from_str("123.12").unwrap()),
-            123.12
         );
     }
 }
