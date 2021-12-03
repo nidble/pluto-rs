@@ -19,15 +19,32 @@ pub struct Exchange {
     pub amount_to: BigDecimal,
 }
 
-impl Exchange {
-    fn to_bigdecimal(from: f64) -> BigDecimal {
-        BigDecimal::from_f64(from).unwrap_or_default()
-    }
+trait ToBigDecimal {
+    fn to_bigdecimal(&self) -> BigDecimal;
+}
 
-    fn round_two(value: &BigDecimal) -> f64 {
-        let to = value.to_f64().unwrap_or_default();
+impl ToBigDecimal for f64 {
+    fn to_bigdecimal(&self) -> BigDecimal {
+        BigDecimal::from_f64(*self).unwrap_or_default()
+    }
+}
+
+fn to_bigdecimal<F64: ToBigDecimal>(f: F64) -> BigDecimal{
+    F64::to_bigdecimal(&f)
+}
+trait RoundTwo {
+    fn round_two(&self) -> f64;
+}
+
+impl RoundTwo for BigDecimal {
+    fn round_two(&self) -> f64 {
+        let to = self.to_f64().unwrap_or_default();
         (to * 100.0).round() / 100.0
     }
+}
+
+fn round_two<R: RoundTwo>(value: &R) -> f64 {
+    R::round_two(value)
 }
 
 impl Serialize for Exchange {
@@ -42,8 +59,8 @@ impl Serialize for Exchange {
         state.serialize_field("created_at", &created_at)?;
         state.serialize_field("currency_from", &self.currency_from)?;
         state.serialize_field("currency_to", &self.currency_to)?;
-        state.serialize_field("amount_from", &Exchange::round_two(&self.amount_from))?;
-        state.serialize_field("amount_to", &Exchange::round_two(&self.amount_to))?;
+        state.serialize_field("amount_from", &round_two(&self.amount_from))?;
+        state.serialize_field("amount_to", &round_two(&self.amount_to))?;
         state.end()
     }
 }
@@ -93,8 +110,8 @@ impl ExchangeRepo for PostgresExchangeRepo {
     }
 
     async fn add_exchange(&self, body_data: BodyData, new_value: f64) -> anyhow::Result<Exchange> {
-        let from = Exchange::to_bigdecimal(body_data.amount_from);
-        let to = Exchange::to_bigdecimal(new_value);
+        let from = to_bigdecimal(body_data.amount_from);
+        let to = to_bigdecimal(new_value);
         let exchange = sqlx::query_as!(Exchange,
             r#"
 INSERT INTO exchanges ( amount_from, amount_to, currency_from, currency_to, created_at ) VALUES ( $1, $2, $3, $4, $5 )
@@ -115,6 +132,8 @@ mod tests {
     use serde_json;
     use sqlx::types::BigDecimal;
 
+    use crate::model::{round_two, to_bigdecimal};
+
     use super::Exchange;
 
     #[test]
@@ -130,7 +149,7 @@ mod tests {
     #[test]
     fn test_exchange_to_bigdecimal_works() {
         assert_eq!(
-            Exchange::to_bigdecimal(-123.0),
+            to_bigdecimal(-123.0),
             BigDecimal::from_str("-123.0000000000000").unwrap()
         );
     }
@@ -138,7 +157,7 @@ mod tests {
     #[test]
     fn test_exchange_round_two_works() {
         assert_eq!(
-            Exchange::round_two(&BigDecimal::from_str("123.12").unwrap()),
+            round_two(&BigDecimal::from_str("123.12").unwrap()),
             123.12
         );
     }
