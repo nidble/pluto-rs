@@ -6,6 +6,7 @@ use serde_json::json;
 use std::{
     convert::Infallible,
     marker::{Send, Sync},
+    fmt::Display,
 };
 
 use crate::http_error::{ErrorMessage, HttpError};
@@ -21,13 +22,15 @@ pub struct BodyData {
     pub amount_from: f64,
 }
 
-fn format_error<E: std::fmt::Display>(err: E, internal_code: u16) -> Rejection {
-    let error = ErrorMessage {
-        internal_code: Some(internal_code),
-        message: err.to_string(),
-        code: None,
-    };
-    rweb::reject::custom(error)
+fn format_error<E: Display>(code: u16) -> impl Fn(E) -> Rejection {
+    move |err| {
+        let error = ErrorMessage {
+            internal_code: Some(code),
+            message: err.to_string(),
+            code: None,
+        };
+        rweb::reject::custom(error)
+    }
 }
 
 #[post("/exchanges")]
@@ -35,15 +38,15 @@ pub async fn new_exchange(
     #[data] api: impl ExchangeRepo + Clone + Send + Sync,
     #[body] body: bytes::Bytes,
 ) -> Result<impl Reply, Rejection> {
-    let json = std::str::from_utf8(&body).map_err(|err| format_error(err, 1001))?;
-    let bd: BodyData = serde_json::from_str(json).map_err(|err| format_error(err, 1002))?;
+    let json = std::str::from_utf8(&body).map_err(format_error(1001))?;
+    let bd: BodyData = serde_json::from_str(json).map_err(format_error(1002))?;
 
     let amount = util::exchange(&bd.currency_from, &bd.currency_to, bd.amount_from)
-        .map_err(|err| format_error(err, 1003))?;
+        .map_err(format_error(1003))?;
     let resp = api
         .add_exchange(bd, amount)
         .await
-        .map_err(|err| format_error(err, 1004))?;
+        .map_err(format_error(1004))?;
 
     let reply = rweb::reply::json(&resp);
 
