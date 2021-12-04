@@ -21,7 +21,7 @@ sqlx = { version = "0.5", features = [ "runtime-tokio-native-tls" , "postgres", 
 rusty-money = "0.4.1"
 rust_decimal_macros = "1.17.0"
 rust_decimal = "1.17.0"
-rweb = { version = "0.6", features = ["openapi"] }
+rweb = { version = "0.15", features = ["openapi"] }
 chrono = { version = "0.4.19", features = ["serde"] }
 tokio = { version = "1.14.0", features = ["full"] }
 # Required to rename uuid::Uuid -> uuid and avoid collision.
