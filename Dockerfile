@@ -1,47 +1,45 @@
-FROM rust:1.56 as builder
+FROM rust:1.56 AS chef
 
-RUN USER=root cargo install sqlx-cli --no-default-features --features postgres
-RUN USER=root cargo new --bin pluto-rs
+ENV SQLX_OFFLINE=true \
+    DATABASE_URL=''
 
-ENV SQLX_OFFLINE=true
+RUN cargo install sqlx-cli --no-default-features --features postgres
 
-WORKDIR /pluto-rs
-COPY ./Cargo.toml ./Cargo.toml
-RUN touch ./src/lib.rs
-RUN cargo build --release --bin pluto-rs
-RUN rm src/*.rs
+# We only pay the installation cost once,
+# it will be cached from the second build onwards
+RUN cargo install cargo-chef
 
-ADD . ./
+WORKDIR /app
 
-RUN rm ./target/release/deps/pluto_rs*
-RUN cargo build --release --bin pluto-rs
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
 
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
 
-FROM debian:bookworm-slim
-ARG APP=/usr/src/app
+# Build dependencies - this is the caching Docker layer!
+RUN cargo chef cook --release --recipe-path recipe.json
+
+# Build application
+COPY . .
+RUN cargo install --path .
 
 EXPOSE 3030
 
-# RUN apt-get update \
-#     && apt-get install -y ca-certificates tzdata \
-#     && rm -rf /var/lib/apt/lists/*
-# ENV TZ=Etc/UTC 
-
-RUN apt update && apt install -y openssl libssl-dev
+# We do not need the Rust toolchain to run the binary!
+# FROM gcr.io/distroless/cc-debian11
+FROM debian:bookworm-slim
+COPY --from=builder /usr/local/cargo/bin/pluto-rs  /usr/local/bin
 
 ENV APP_USER=ferris \
-    RUST_LOG=info \
-    DATABASE_URL=''
+    RUST_LOG=info
 
 RUN groupadd $APP_USER \
-    && useradd -g $APP_USER $APP_USER \
-    && mkdir -p ${APP}
+    && useradd -g $APP_USER $APP_USER
 
-COPY --from=builder /pluto-rs/target/release/pluto-rs ${APP}/pluto-rs
-
-RUN chown -R $APP_USER:$APP_USER ${APP}
-
+# RUN chown -R $APP_USER:$APP_USER ${APP}
+RUN chown -R $APP_USER:$APP_USER /usr/local/bin/pluto-rs
 USER $APP_USER
-WORKDIR ${APP}
 
-CMD ["./pluto-rs"]
+CMD ["/usr/local/bin/pluto-rs"]
