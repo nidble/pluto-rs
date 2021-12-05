@@ -1,3 +1,4 @@
+# https://windsoilder.github.io/writing_dockerfile_in_rust_project.html
 FROM rust:1.56 AS chef
 
 ENV SQLX_OFFLINE=true \
