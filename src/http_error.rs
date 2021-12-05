@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use rweb::hyper::StatusCode;
 use rweb::Rejection;
 use serde::Serialize;
@@ -33,5 +35,16 @@ impl<'a> HttpError<'a> {
         }
 
         HttpError::InternalServerError(StatusCode::INTERNAL_SERVER_ERROR)
+    }
+}
+
+pub(crate) fn format_error<E: Display>(code: u16) -> impl Fn(E) -> Rejection {
+    move |err| {
+        let error = ErrorMessage {
+            internal_code: Some(code),
+            message: err.to_string(),
+            code: None,
+        };
+        rweb::reject::custom(error)
     }
 }
