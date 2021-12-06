@@ -8,7 +8,7 @@ mod tests {
     use sqlx::postgres::PgPoolOptions;
 
     use super::actions::new_exchange;
-    use super::model::PostgresExchangeRepo;
+    use super::model::ExchangeRepo;
 
     #[tokio::test]
     async fn should_return_200() {
@@ -21,7 +21,7 @@ mod tests {
             .await
             .unwrap();
 
-        let api = new_exchange(PostgresExchangeRepo::new(pool).clone());
+        let api = new_exchange(ExchangeRepo::new(pool).clone());
         let body = r#"{"currencyFrom": "EUR", "currencyTo": "USD", "amountFrom": 123, "createdAt": "2012-04-23T18:25:43.511Z"}"#;
         let res = request()
             .method("POST")
