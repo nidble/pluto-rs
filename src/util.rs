@@ -20,7 +20,7 @@ impl ToBigDecimal for f64 {
     }
 }
 
-pub(crate) fn to_bigdecimal<F64: ToBigDecimal>(f: F64) -> BigDecimal{
+pub(crate) fn to_bigdecimal<F64: ToBigDecimal>(f: F64) -> BigDecimal {
     F64::to_bigdecimal(&f)
 }
 
@@ -78,9 +78,9 @@ pub(crate) fn get_datetime_zero() -> DateTime<Utc> {
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
+    use crate::util::{get_datetime_zero, round_two, to_bigdecimal};
     use sqlx::types::BigDecimal;
-    use crate::util::{round_two, get_datetime_zero, to_bigdecimal};
+    use std::str::FromStr;
 
     use super::exchange;
 
@@ -129,9 +129,6 @@ mod tests {
 
     #[test]
     fn test_exchange_round_two_works() {
-        assert_eq!(
-            round_two(&BigDecimal::from_str("123.12").unwrap()),
-            123.12
-        );
+        assert_eq!(round_two(&BigDecimal::from_str("123.12").unwrap()), 123.12);
     }
 }

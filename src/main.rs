@@ -19,8 +19,8 @@ async fn main() -> anyhow::Result<()> {
         .connect(&database_url)
         .await?;
 
-    let api = actions::new_exchange(model::ExchangeRepo::new(pool))
-        .recover(actions::handle_rejection);
+    let api =
+        actions::new_exchange(model::ExchangeRepo::new(pool)).recover(actions::handle_rejection);
     let routes = api.with(rweb::log("exchanges"));
 
     log!(Level::Info, "Start up the server...");

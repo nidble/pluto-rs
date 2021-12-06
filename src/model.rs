@@ -7,7 +7,10 @@ use async_trait::async_trait;
 use sqlx::{postgres::PgPool, types::BigDecimal};
 use uuid_::Uuid;
 
-use crate::{actions::BodyData, util::{get_datetime_zero, round_two, to_bigdecimal}};
+use crate::{
+    actions::BodyData,
+    util::{get_datetime_zero, round_two, to_bigdecimal},
+};
 
 pub struct Exchange {
     pub id: Uuid,
@@ -97,8 +100,8 @@ RETURNING id, amount_from, amount_to, currency_from, currency_to, created_at
 
 #[cfg(test)]
 mod tests {
-    use serde_json;
     use super::Exchange;
+    use serde_json;
 
     #[test]
     fn test_exchange_serialize_works() {

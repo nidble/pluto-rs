@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use log::{log, Level};
-use rweb::{post, Rejection, Reply};
+use rweb::{get, post, Rejection, Reply};
 use serde::Deserialize;
 use serde_json::json;
 use std::{
@@ -8,7 +8,7 @@ use std::{
     marker::{Send, Sync},
 };
 
-use crate::http_error::{HttpError, format_error};
+use crate::http_error::{format_error, HttpError};
 use crate::model::ModelRepo;
 use crate::util;
 
@@ -21,20 +21,29 @@ pub struct BodyData {
     pub amount_from: f64,
 }
 
+#[get("/healthz")]
+pub async fn status(
+    #[data] repo: impl ModelRepo + Clone + Send + Sync,
+) -> Result<impl Reply, Rejection> {
+    repo.ping().await.map_err(format_error(1001))?;
+
+    Ok(rweb::reply::reply())
+}
+
 #[post("/exchanges")]
 pub async fn new_exchange(
-    #[data] api: impl ModelRepo + Clone + Send + Sync,
+    #[data] repo: impl ModelRepo + Clone + Send + Sync,
     #[body] body: bytes::Bytes,
 ) -> Result<impl Reply, Rejection> {
-    let json = std::str::from_utf8(&body).map_err(format_error(1001))?;
-    let bd: BodyData = serde_json::from_str(json).map_err(format_error(1002))?;
+    let json = std::str::from_utf8(&body).map_err(format_error(1020))?;
+    let bd: BodyData = serde_json::from_str(json).map_err(format_error(1030))?;
 
     let amount = util::exchange(&bd.currency_from, &bd.currency_to, bd.amount_from)
-        .map_err(format_error(1003))?;
-    let exchange = api
+        .map_err(format_error(1040))?;
+    let exchange = repo
         .add_exchange(bd, amount)
         .await
-        .map_err(format_error(1004))?;
+        .map_err(format_error(1050))?;
 
     let reply = rweb::reply::json(&exchange);
 
