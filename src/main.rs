@@ -19,7 +19,7 @@ async fn main() -> anyhow::Result<()> {
         .connect(&database_url)
         .await?;
 
-    let api = actions::new_exchange(model::PostgresExchangeRepo::new(pool))
+    let api = actions::new_exchange(model::ExchangeRepo::new(pool))
         .recover(actions::handle_rejection);
     let routes = api.with(rweb::log("exchanges"));
 

@@ -9,7 +9,7 @@ use std::{
 };
 
 use crate::http_error::{HttpError, format_error};
-use crate::model::ExchangeRepo;
+use crate::model::ModelRepo;
 use crate::util;
 
 #[derive(Debug, Deserialize)]
@@ -23,7 +23,7 @@ pub struct BodyData {
 
 #[post("/exchanges")]
 pub async fn new_exchange(
-    #[data] api: impl ExchangeRepo + Clone + Send + Sync,
+    #[data] api: impl ModelRepo + Clone + Send + Sync,
     #[body] body: bytes::Bytes,
 ) -> Result<impl Reply, Rejection> {
     let json = std::str::from_utf8(&body).map_err(format_error(1001))?;
@@ -73,16 +73,16 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     use super::{handle_rejection, new_exchange, BodyData};
-    use crate::model::{Exchange, ExchangeRepo};
+    use crate::model::{Exchange, ModelRepo};
 
     mock! {
-        pub PostgresExchangeRepo {
+        pub ExchangeRepo {
             fn add_exchange(&self, body_data: BodyData, _new_value: f64) -> anyhow::Result<Exchange>;
         }
     }
 
     #[async_trait]
-    impl ExchangeRepo for Arc<Mutex<MockPostgresExchangeRepo>> {
+    impl ModelRepo for Arc<Mutex<MockExchangeRepo>> {
         async fn ping(&self) -> anyhow::Result<()> {
             todo!()
         }
@@ -97,8 +97,8 @@ mod tests {
         }
     }
 
-    fn get_repo_mock(times: TimesRange) -> Arc<Mutex<MockPostgresExchangeRepo>> {
-        let mut repo = MockPostgresExchangeRepo::new();
+    fn get_repo_mock(times: TimesRange) -> Arc<Mutex<MockExchangeRepo>> {
+        let mut repo = MockExchangeRepo::new();
         repo.expect_add_exchange()
             .times(times)
             .returning(|_, _| Ok(Exchange::default()));

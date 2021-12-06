@@ -50,17 +50,17 @@ impl Default for Exchange {
 }
 
 #[async_trait]
-pub trait ExchangeRepo {
+pub trait ModelRepo {
     async fn ping(&self) -> anyhow::Result<()>;
     async fn add_exchange(&self, body_data: BodyData, new_value: f64) -> anyhow::Result<Exchange>;
 }
 
 #[derive(Clone)]
-pub struct PostgresExchangeRepo {
+pub struct ExchangeRepo {
     pub pg_pool: Arc<PgPool>,
 }
 
-impl PostgresExchangeRepo {
+impl ExchangeRepo {
     pub fn new(pg_pool: PgPool) -> Self {
         Self {
             pg_pool: Arc::new(pg_pool),
@@ -69,7 +69,7 @@ impl PostgresExchangeRepo {
 }
 
 #[async_trait]
-impl ExchangeRepo for PostgresExchangeRepo {
+impl ModelRepo for ExchangeRepo {
     async fn ping(&self) -> anyhow::Result<()> {
         sqlx::query("SELECT $1")
             .bind(42)
