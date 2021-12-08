@@ -56,12 +56,11 @@ impl ConversionRate for Currency {
     }
 }
 
-pub(crate) fn exchange(from: &str, to: &str, amount: f64) -> Result<f64> {
+pub(crate) fn exchange(from: &str, to: &str, amount: f64, rate: Decimal) -> Result<f64> {
     let iso_from = iso::find(from).ok_or(MoneyError::InvalidCurrency)?;
     let iso_to = iso::find(to).ok_or(MoneyError::InvalidCurrency)?;
     let amount = Decimal::from_f64(amount).ok_or(MoneyError::InvalidAmount)?;
 
-    let rate = iso_from.get_rate_for(iso_to)?;
     let amount = ExchangeRate::new(iso_from, iso_to, rate)?
         .convert(Money::from_decimal(amount, iso_from))
         .map(|money| *money.amount())?;
@@ -80,6 +79,7 @@ pub(crate) fn get_datetime_zero() -> DateTime<Utc> {
 mod tests {
     use crate::util::{get_datetime_zero, round_two, to_bigdecimal};
     use sqlx::types::BigDecimal;
+    use rust_decimal_macros::dec;
     use std::str::FromStr;
 
     use super::exchange;
@@ -87,31 +87,31 @@ mod tests {
     #[test]
     fn test_exchange_usd_eur_works() {
         let amount = 10;
-        let eur = exchange("USD", "EUR", amount.into()).unwrap();
+        let eur = exchange("USD", "EUR", amount.into(), dec!(4.20)).unwrap();
 
-        assert_eq!(eur, 8.6207 as f64);
+        assert_eq!(eur, 42 as f64);
     }
 
     #[test]
     fn test_exchange_eur_usd_works() {
         let amount = 10;
-        let usd = exchange("EUR", "USD", amount.into()).unwrap();
-        assert_eq!(usd, 11.31857 as f64);
+        let usd = exchange("EUR", "USD", amount.into(), dec!(42)).unwrap();
+        assert_eq!(usd, 420.0 as f64);
     }
 
     #[test]
     fn test_exchange_eur_usd2_works() {
         let amount = 1;
-        let usd = exchange("EUR", "USD", amount.into()).unwrap();
-        assert_eq!(usd, 1.131857 as f64);
+        let usd = exchange("EUR", "USD", amount.into(), dec!(0.42)).unwrap();
+        assert_eq!(usd, 0.42 as f64);
     }
 
-    #[test]
-    fn test_exchange_others_not_works() {
-        let amount = 10;
-        let change = exchange("EUR", "CAD", amount.into());
-        assert!(change.is_err());
-    }
+    // #[test]
+    // fn test_exchange_others_not_works() {
+    //     let amount = 10;
+    //     let change = exchange("EUR", "CAD", amount.into(), dec!(0.22));
+    //     assert!(change.is_err());
+    // }
 
     #[test]
     fn test_datetime_zero_works() {

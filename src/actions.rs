@@ -11,6 +11,7 @@ use std::{
 use crate::http_error::{format_error, HttpError};
 use crate::model::ModelRepo;
 use crate::util;
+use crate::api;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -38,12 +39,17 @@ pub async fn new_exchange(
     let json = std::str::from_utf8(&body).map_err(format_error(1020))?;
     let bd: BodyData = serde_json::from_str(json).map_err(format_error(1030))?;
 
-    let amount = util::exchange(&bd.currency_from, &bd.currency_to, bd.amount_from)
+    let rate = api::get_rate(&bd.currency_from, &bd.currency_to, "latest")
+        .await
         .map_err(format_error(1040))?;
+
+    let amount = util::exchange(&bd.currency_from, &bd.currency_to, bd.amount_from, rate)
+        .map_err(format_error(1050))?;
+
     let exchange = repo
         .add_exchange(bd, amount)
         .await
-        .map_err(format_error(1050))?;
+        .map_err(format_error(1060))?;
 
     let reply = rweb::reply::json(&exchange);
 

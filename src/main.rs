@@ -3,6 +3,7 @@ use log::{log, Level};
 use rweb::Filter;
 use sqlx::postgres::PgPoolOptions;
 
+mod api;
 mod actions;
 mod http_error;
 mod model;
