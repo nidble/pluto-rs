@@ -23,7 +23,7 @@ async fn main() -> anyhow::Result<()> {
     let api =
         actions::new_exchange(
             model::ExchangeRepo::new(pool),
-            api::GithubRepo::new()
+            api::Currency::new()
         ).recover(actions::handle_rejection);
     let routes = api.with(rweb::log("exchanges"));
 

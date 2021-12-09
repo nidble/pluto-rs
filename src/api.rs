@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use rust_decimal::{Decimal, prelude::FromPrimitive};
 use serde_json::Value;
 
+// https://raw.githubusercontent.com/fawazahmed0/currency-api/1/latest/currencies/usd/eur.json { "date": "2021-12-07", "eur": 0.88645 }
 static BASE_URL: &str = "https://raw.githubusercontent.com/fawazahmed0/currency-api/1";
 
 #[derive(Debug, PartialEq)]
@@ -33,19 +34,19 @@ impl error::Error for ApiError {
 }
 
 #[async_trait]
-pub trait CurrencyApi {
+pub trait Api {
     async fn get_rate(&self, from: &str, to: &str, date: &str) -> anyhow::Result<Decimal>;
 }
 
 #[derive(Clone)]
-pub struct GithubRepo {
+pub struct Currency {
     client: reqwest::Client,
     base_url: &'static str,
 }
 
-impl GithubRepo {
+impl Currency {
     pub fn new() -> Self {
-        GithubRepo {
+        Currency {
             client: reqwest::Client::new(),
             base_url: BASE_URL,
         }
@@ -53,7 +54,7 @@ impl GithubRepo {
 }
 
 #[async_trait]
-impl CurrencyApi for GithubRepo {
+impl Api for Currency {
     async fn get_rate(&self, from: &str, to: &str, date: &str) -> anyhow::Result<Decimal> {
         let iso_from = from.to_lowercase();
         let iso_to = to.to_lowercase();
@@ -75,10 +76,4 @@ impl CurrencyApi for GithubRepo {
     
         Ok(rate)
     }
-}
-
-// https://raw.githubusercontent.com/fawazahmed0/currency-api/1/latest/currencies/usd/eur.json { "date": "2021-12-07", "eur": 0.88645 }
-pub(crate) async fn get_rate(from: &str, to: &str, date: impl Into<String>) -> anyhow::Result<Decimal> {
-    let api = GithubRepo::new();
-    api.get_rate(from, to, &date.into()).await
 }
