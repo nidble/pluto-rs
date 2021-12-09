@@ -4,6 +4,7 @@ use pluto_rs::model;
 #[cfg(test)]
 mod tests {
     use dotenv::dotenv;
+    use pluto_rs::api::GithubRepo;
     use rweb::test::request;
     use sqlx::postgres::PgPoolOptions;
 
@@ -21,7 +22,7 @@ mod tests {
             .await
             .unwrap();
 
-        let api = new_exchange(ExchangeRepo::new(pool).clone());
+        let api = new_exchange(ExchangeRepo::new(pool).clone(), GithubRepo::new());
         let body = r#"{"currencyFrom": "EUR", "currencyTo": "USD", "amountFrom": 123, "createdAt": "2012-04-23T18:25:43.511Z"}"#;
         let res = request()
             .method("POST")

@@ -21,7 +21,10 @@ async fn main() -> anyhow::Result<()> {
         .await?;
 
     let api =
-        actions::new_exchange(model::ExchangeRepo::new(pool)).recover(actions::handle_rejection);
+        actions::new_exchange(
+            model::ExchangeRepo::new(pool),
+            api::GithubRepo::new()
+        ).recover(actions::handle_rejection);
     let routes = api.with(rweb::log("exchanges"));
 
     log!(Level::Info, "Start up the server...");

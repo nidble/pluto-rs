@@ -1,4 +1,5 @@
 use std::{collections::HashMap, fmt, error};
+use async_trait::async_trait;
 use rust_decimal::{Decimal, prelude::FromPrimitive};
 use serde_json::Value;
 
@@ -31,22 +32,53 @@ impl error::Error for ApiError {
     }
 }
 
+#[async_trait]
+pub trait CurrencyApi {
+    async fn get_rate(&self, from: &str, to: &str, date: &str) -> anyhow::Result<Decimal>;
+}
+
+#[derive(Clone)]
+pub struct GithubRepo {
+    client: reqwest::Client,
+    base_url: &'static str,
+}
+
+impl GithubRepo {
+    pub fn new() -> Self {
+        GithubRepo {
+            client: reqwest::Client::new(),
+            base_url: BASE_URL,
+        }
+    }
+}
+
+#[async_trait]
+impl CurrencyApi for GithubRepo {
+    async fn get_rate(&self, from: &str, to: &str, date: &str) -> anyhow::Result<Decimal> {
+        let iso_from = from.to_lowercase();
+        let iso_to = to.to_lowercase();
+        let url = format!("{}/{}/currencies/{}/{}.json", self.base_url, date, iso_from, &iso_to);
+        let client = self.client.clone();
+
+        let resp = client.get(url)
+            .send()
+            .await?
+            .json::<HashMap<String, Value>>()
+            .await?;
+    
+        let rate = resp.get(&iso_to).ok_or_else(|| ApiError::RateNotAvailable)?;
+        let value = match rate {
+            Value::Number(n) => n.as_f64().and_then(Decimal::from_f64),
+            _ => anyhow::bail!(ApiError::InvalidAmount)
+        };
+        let rate = value.ok_or_else(|| ApiError::InvalidRatio)?;
+    
+        Ok(rate)
+    }
+}
+
 // https://raw.githubusercontent.com/fawazahmed0/currency-api/1/latest/currencies/usd/eur.json { "date": "2021-12-07", "eur": 0.88645 }
 pub(crate) async fn get_rate(from: &str, to: &str, date: impl Into<String>) -> anyhow::Result<Decimal> {
-    let iso_from = from.to_lowercase();
-    let iso_to = to.to_lowercase();
-    let url = format!("{}/{}/currencies/{}/{}.json", BASE_URL, date.into(), iso_from, &iso_to);
-    let resp = reqwest::get(url)
-        .await?
-        .json::<HashMap<String, Value>>()
-        .await?;
-
-    let rate = resp.get(&iso_to).ok_or_else(|| ApiError::RateNotAvailable)?;
-    let value = match rate {
-        Value::Number(n) => n.as_f64().and_then(Decimal::from_f64),
-        _ => anyhow::bail!(ApiError::InvalidAmount)
-    };
-    let rate = value.ok_or_else(|| ApiError::InvalidRatio)?;
-
-    Ok(rate)
+    let api = GithubRepo::new();
+    api.get_rate(from, to, &date.into()).await
 }
