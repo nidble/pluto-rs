@@ -78,8 +78,8 @@ pub(crate) fn get_datetime_zero() -> DateTime<Utc> {
 #[cfg(test)]
 mod tests {
     use crate::util::{get_datetime_zero, round_two, to_bigdecimal};
-    use sqlx::types::BigDecimal;
     use rust_decimal_macros::dec;
+    use sqlx::types::BigDecimal;
     use std::str::FromStr;
 
     use super::exchange;

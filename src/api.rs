@@ -1,7 +1,7 @@
-use std::{collections::HashMap, fmt, error};
 use async_trait::async_trait;
-use rust_decimal::{Decimal, prelude::FromPrimitive};
+use rust_decimal::{prelude::FromPrimitive, Decimal};
 use serde_json::Value;
+use std::{collections::HashMap, error, fmt};
 
 // https://raw.githubusercontent.com/fawazahmed0/currency-api/1/latest/currencies/usd/eur.json { "date": "2021-12-07", "eur": 0.88645 }
 static BASE_URL: &str = "https://raw.githubusercontent.com/fawazahmed0/currency-api/1";
@@ -58,22 +58,28 @@ impl Api for Currency {
     async fn get_rate(&self, from: &str, to: &str, date: &str) -> anyhow::Result<Decimal> {
         let iso_from = from.to_lowercase();
         let iso_to = to.to_lowercase();
-        let url = format!("{}/{}/currencies/{}/{}.json", self.base_url, date, iso_from, &iso_to);
+        let url = format!(
+            "{}/{}/currencies/{}/{}.json",
+            self.base_url, date, iso_from, &iso_to
+        );
         let client = self.client.clone();
 
-        let resp = client.get(url)
+        let resp = client
+            .get(url)
             .send()
             .await?
             .json::<HashMap<String, Value>>()
             .await?;
-    
-        let rate = resp.get(&iso_to).ok_or_else(|| ApiError::RateNotAvailable)?;
+
+        let rate = resp
+            .get(&iso_to)
+            .ok_or_else(|| ApiError::RateNotAvailable)?;
         let value = match rate {
             Value::Number(n) => n.as_f64().and_then(Decimal::from_f64),
-            _ => anyhow::bail!(ApiError::InvalidAmount)
+            _ => anyhow::bail!(ApiError::InvalidAmount),
         };
         let rate = value.ok_or_else(|| ApiError::InvalidRatio)?;
-    
+
         Ok(rate)
     }
 }

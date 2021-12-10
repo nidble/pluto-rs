@@ -8,10 +8,10 @@ use std::{
     marker::{Send, Sync},
 };
 
+use crate::api::Api;
 use crate::http_error::{format_error, HttpError};
 use crate::model::ModelRepo;
 use crate::util;
-use crate::api::Api;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -40,7 +40,8 @@ pub async fn new_exchange(
     let json = std::str::from_utf8(&body).map_err(format_error(1020))?;
     let bd: BodyData = serde_json::from_str(json).map_err(format_error(1030))?;
 
-    let rate = api.get_rate(&bd.currency_from, &bd.currency_to, "latest")
+    let rate = api
+        .get_rate(&bd.currency_from, &bd.currency_to, "latest")
         .await
         .map_err(format_error(1040))?;
 
@@ -90,7 +91,10 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     use super::{new_exchange, BodyData};
-    use crate::{model::{Exchange, ModelRepo}, api::Api};
+    use crate::{
+        api::Api,
+        model::{Exchange, ModelRepo},
+    };
 
     mock! {
         pub ExchangeRepo {
@@ -135,7 +139,6 @@ mod tests {
             .returning(|_, _| Ok(Exchange::default()));
         Arc::new(Mutex::new(repo))
     }
-
 
     fn get_api_mock(times: TimesRange) -> Arc<Mutex<MockApi>> {
         let mut api = MockApi::new();

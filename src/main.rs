@@ -3,8 +3,8 @@ use log::{log, Level};
 use rweb::Filter;
 use sqlx::postgres::PgPoolOptions;
 
-mod api;
 mod actions;
+mod api;
 mod http_error;
 mod model;
 mod util;
@@ -20,11 +20,8 @@ async fn main() -> anyhow::Result<()> {
         .connect(&database_url)
         .await?;
 
-    let api =
-        actions::new_exchange(
-            model::ExchangeRepo::new(pool),
-            api::Currency::new()
-        ).recover(actions::handle_rejection);
+    let api = actions::new_exchange(model::ExchangeRepo::new(pool), api::Currency::new())
+        .recover(actions::handle_rejection);
     let routes = api.with(rweb::log("exchanges"));
 
     log!(Level::Info, "Start up the server...");
