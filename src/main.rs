@@ -20,7 +20,7 @@ async fn main() -> anyhow::Result<()> {
         .connect(&database_url)
         .await?;
 
-    let api = actions::new_exchange(model::ExchangeRepo::new(pool), api::Currency::new())
+    let api = actions::new_exchange(model::ExchangeRepository::new(pool), api::Currency::new())
         .recover(actions::handle_rejection);
     let routes = api.with(rweb::log("exchanges"));
 

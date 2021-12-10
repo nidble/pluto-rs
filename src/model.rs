@@ -27,11 +27,7 @@ impl Serialize for Exchange {
         S: serde::Serializer,
     {
         let mut state = serializer.serialize_struct("Exchange", 6)?;
-        let created_at = if cfg!(test) {
-            get_datetime_zero()
-        } else {
-            self.created_at
-        };
+        let created_at = if cfg!(test) { get_datetime_zero() } else { self.created_at };
 
         state.serialize_field("id", &self.id)?;
         state.serialize_field("created_at", &created_at)?;
@@ -57,17 +53,17 @@ impl Default for Exchange {
 }
 
 #[async_trait]
-pub trait ModelRepo {
+pub trait Repository {
     async fn ping(&self) -> anyhow::Result<()>;
     async fn add_exchange(&self, body_data: BodyData, new_value: f64) -> anyhow::Result<Exchange>;
 }
 
 #[derive(Clone)]
-pub struct ExchangeRepo {
+pub struct ExchangeRepository {
     pub pg_pool: Arc<PgPool>,
 }
 
-impl ExchangeRepo {
+impl ExchangeRepository {
     pub fn new(pg_pool: PgPool) -> Self {
         Self {
             pg_pool: Arc::new(pg_pool),
@@ -76,7 +72,7 @@ impl ExchangeRepo {
 }
 
 #[async_trait]
-impl ModelRepo for ExchangeRepo {
+impl Repository for ExchangeRepository {
     async fn ping(&self) -> anyhow::Result<()> {
         sqlx::query("SELECT $1")
             .bind(42)
