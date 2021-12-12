@@ -27,7 +27,11 @@ impl Serialize for Exchange {
         S: serde::Serializer,
     {
         let mut state = serializer.serialize_struct("Exchange", 6)?;
-        let created_at = if cfg!(test) { get_datetime_zero() } else { self.created_at };
+        let created_at = if cfg!(test) {
+            get_datetime_zero()
+        } else {
+            self.created_at
+        };
 
         state.serialize_field("id", &self.id)?;
         state.serialize_field("created_at", &created_at)?;
