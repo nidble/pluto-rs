@@ -9,6 +9,7 @@ Pluto uses a number of open source projects to work properly:
 - [Rust] - A language empowering everyone to build reliable and efficient software
 - [Postgres] - The World's Most Advanced Open Source Relational Database
 - [Hasura] - Blazing fast, instant realtime GraphQL APIs on your DB
+- [Rweb] - Yet another web server framework for rust
 - [SQLx] - The Rust SQL Toolkit
 
 And of course Pluto itself is open source with a [public repository][pluto] on GitHub.
@@ -118,3 +119,4 @@ curl -X POST -H "Content-Type: application/json" -d '{"currencyFrom": "EUR", "cu
    [Hasura]: <https://github.com/hasura/graphql-engine>
    [Hasura-Cli]: <https://hasura.io/docs/latest/graphql/core/hasura-cli/index.html>
    [SQLx]: <https://github.com/launchbadge/sqlx>
+   [Rweb]: <https://github.com/kdy1/rweb>
