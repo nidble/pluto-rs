@@ -20,9 +20,14 @@ async fn main() -> anyhow::Result<()> {
         .connect(&database_url)
         .await?;
 
-    let api = actions::new_exchange(model::ExchangeRepository::new(pool), api::Currency::new())
-        .recover(actions::handle_rejection);
-    let routes = api.with(rweb::log("exchanges"));
+    let model = model::ExchangeRepository::new(pool);
+    let api_service = api::Currency::new();
+
+    let health_check = actions::status(model.clone());
+    let exchanges = actions::new_exchange(model.clone(), api_service)
+        .recover(actions::handle_rejection)
+        .with(rweb::log("exchanges"));
+    let routes = health_check.or(exchanges);
 
     log!(Level::Info, "Start up the server...");
     rweb::serve(routes).run(([0, 0, 0, 0], 3030)).await;
