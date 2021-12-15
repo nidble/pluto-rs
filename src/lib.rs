@@ -19,7 +19,7 @@ pub async fn init_deps(pool_no: u32) -> anyhow::Result<Pool<Postgres>> {
     Ok(pool)
 }
 
-pub async fn init_routes(pool: Pool<Postgres>) -> anyhow::Result<
+pub fn init_routes(pool: Pool<Postgres>) -> anyhow::Result<
     impl Filter<Extract = (impl Reply,), Error = Infallible> + Clone,
 > {
     let model = model::ExchangeRepository::new(pool);

@@ -1,6 +1,6 @@
 use dotenv::dotenv;
 use log::{log, Level};
-use pluto_rs::init_routes;
+use pluto_rs::{init_routes, init_deps};
 
 mod actions;
 mod api;
@@ -13,8 +13,8 @@ async fn main() -> anyhow::Result<()> {
     dotenv().ok();
     pretty_env_logger::init();
 
-    let routes = init_routes(5).await?;
-    let routes = init_routes(5).await?;
+    let pool = init_deps(5).await?;
+    let routes = init_routes(pool)?;
 
     log!(Level::Info, "Start up the server...");
     rweb::serve(routes).run(([0, 0, 0, 0], 3030)).await;
