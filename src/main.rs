@@ -14,6 +14,7 @@ async fn main() -> anyhow::Result<()> {
     pretty_env_logger::init();
 
     let routes = init_routes(5).await?;
+    let routes = init_routes(5).await?;
 
     log!(Level::Info, "Start up the server...");
     rweb::serve(routes).run(([0, 0, 0, 0], 3030)).await;
