@@ -1,7 +1,7 @@
 use std::convert::Infallible;
 
 use rweb::{Filter, Reply};
-use sqlx::{postgres::PgPoolOptions, Postgres, Pool};
+use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
 pub mod actions;
 pub mod api;
@@ -19,9 +19,9 @@ pub async fn init_deps(pool_no: u32) -> anyhow::Result<Pool<Postgres>> {
     Ok(pool)
 }
 
-pub fn init_routes(pool: Pool<Postgres>) -> anyhow::Result<
-    impl Filter<Extract = (impl Reply,), Error = Infallible> + Clone,
-> {
+pub fn init_routes(
+    pool: Pool<Postgres>,
+) -> anyhow::Result<impl Filter<Extract = (impl Reply,), Error = Infallible> + Clone> {
     let model = model::ExchangeRepository::new(pool);
     let api_service = api::Currency::new();
     let health_check = actions::status(model.clone());

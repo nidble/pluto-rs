@@ -1,6 +1,6 @@
 use dotenv::dotenv;
 use log::{log, Level};
-use pluto_rs::{init_routes, init_deps};
+use pluto_rs::{init_deps, init_routes};
 
 mod actions;
 mod api;

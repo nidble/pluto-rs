@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use dotenv::dotenv;
-    use pluto_rs::{init_routes, init_deps};
+    use pluto_rs::{init_deps, init_routes};
     use rweb::test::request;
 
     #[tokio::test]
@@ -10,7 +10,7 @@ mod tests {
 
         let pool = init_deps(1).await.unwrap();
         let routes = init_routes(pool).unwrap();
-    
+
         let body = r#"{"currencyFrom": "EUR", "currencyTo": "USD", "amountFrom": 123, "createdAt": "2012-04-23T18:25:43.511Z"}"#;
         let res = request()
             .method("POST")
@@ -25,7 +25,7 @@ mod tests {
     #[tokio::test]
     async fn healthcheck_should_return_200() {
         dotenv().ok();
-        
+
         let pool = init_deps(1).await.unwrap();
         let routes = init_routes(pool).unwrap();
 
