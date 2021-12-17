@@ -13,8 +13,8 @@ async fn main() -> anyhow::Result<()> {
     dotenv().ok();
     pretty_env_logger::init();
 
-    let pool = init_deps(5).await?;
-    let routes = init_routes(pool)?;
+    let (repo, api_services) = init_deps(5).await?;
+    let routes = init_routes(repo, api_services)?;
 
     log!(Level::Info, "Start up the server...");
     rweb::serve(routes).run(([0, 0, 0, 0], 3030)).await;
