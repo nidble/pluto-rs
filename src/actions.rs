@@ -26,7 +26,7 @@ pub async fn status(#[data] repo: impl model::Repository) -> Result<impl Reply, 
     Ok(rweb::reply::reply())
 }
 
-#[post("/exchanges")]
+#[post("/api/v1/exchanges")]
 pub async fn new_exchange(
     #[data] repo: impl model::Repository,
     #[data] api: impl api::Api,
@@ -156,7 +156,7 @@ mod tests {
         request()
             .method("POST")
             .body(body)
-            .path("/exchanges")
+            .path("/api/v1/exchanges")
             .reply(&action)
             .await;
 
@@ -176,7 +176,7 @@ mod tests {
         request()
             .method("POST")
             .body(body)
-            .path("/exchanges")
+            .path("/api/v1/exchanges")
             .reply(&action)
             .await;
 

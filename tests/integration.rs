@@ -15,7 +15,7 @@ mod tests {
         let res = request()
             .method("POST")
             .body(body)
-            .path("/exchanges")
+            .path("/api/v1/exchanges")
             .reply(&routes)
             .await;
 
