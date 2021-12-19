@@ -3,14 +3,11 @@ use log::{log, Level};
 use rweb::{get, post, Rejection, Reply};
 use serde::Deserialize;
 use serde_json::json;
-use std::{
-    convert::Infallible,
-    marker::{Send, Sync},
-};
+use std::convert::Infallible;
 
-use crate::api::Api;
+use crate::api;
 use crate::http_error::{format_error, HttpError};
-use crate::model::Repository;
+use crate::model;
 use crate::util;
 
 #[derive(Debug, Deserialize)]
@@ -23,9 +20,7 @@ pub struct BodyData {
 }
 
 #[get("/healthz")]
-pub async fn status(
-    #[data] repo: impl Repository + Clone + Send + Sync,
-) -> Result<impl Reply, Rejection> {
+pub async fn status(#[data] repo: impl model::Repository) -> Result<impl Reply, Rejection> {
     repo.ping().await.map_err(format_error(1001))?;
 
     Ok(rweb::reply::reply())
@@ -33,8 +28,8 @@ pub async fn status(
 
 #[post("/exchanges")]
 pub async fn new_exchange(
-    #[data] repo: impl Repository + Clone + Send + Sync,
-    #[data] api: impl Api + Clone + Send + Sync,
+    #[data] repo: impl model::Repository,
+    #[data] api: impl api::Api,
     #[body] body: bytes::Bytes,
 ) -> Result<impl Reply, Rejection> {
     let json = std::str::from_utf8(&body).map_err(format_error(1020))?;

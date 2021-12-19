@@ -57,7 +57,7 @@ impl Default for Exchange {
 }
 
 #[async_trait]
-pub trait Repository: Clone {
+pub trait Repository: Clone + Send + Sync {
     async fn ping(&self) -> anyhow::Result<()>;
     async fn add_exchange(&self, body_data: BodyData, new_value: f64) -> anyhow::Result<Exchange>;
 }

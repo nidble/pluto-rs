@@ -34,7 +34,7 @@ impl error::Error for ApiError {
 }
 
 #[async_trait]
-pub trait Api: Clone {
+pub trait Api: Clone + Send + Sync {
     async fn get_rate(&self, from: &str, to: &str, date: &str) -> anyhow::Result<Decimal>;
 }
 

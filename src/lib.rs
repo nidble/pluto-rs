@@ -30,8 +30,8 @@ pub fn init_routes<R, A>(
     api_service: A,
 ) -> anyhow::Result<impl Filter<Extract = (impl Reply,), Error = Infallible> + Clone>
 where
-    R: Repository + Clone + Send + Sync,
-    A: Api + Clone + Sync + Send,
+    R: Repository,
+    A: Api,
 {
     let health_check = actions::status(repo.clone());
     let exchanges = actions::new_exchange(repo, api_service)
