@@ -8,4 +8,4 @@ jobs:
       - name: Build the stack
         run: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
       - name: Test
-        run: docker run --network container:pluto_rs appropriate/curl -s --retry 10 --retry-connrefused http://localhost:3030/healthz
+        run: docker run --network container:pluto appropriate/curl -s --retry 10 --retry-connrefused http://localhost:3030/healthz
