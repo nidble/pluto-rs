@@ -6,7 +6,7 @@ use serde_json::json;
 use std::convert::Infallible;
 
 use crate::api;
-use crate::http_error::{format_error, HttpError};
+use crate::http_error::{decorate_error, HttpError};
 use crate::model;
 use crate::util;
 
@@ -21,7 +21,7 @@ pub struct BodyData {
 
 #[get("/healthz")]
 pub async fn status(#[data] repo: impl model::Repository) -> Result<impl Reply, Rejection> {
-    repo.ping().await.map_err(format_error(1001))?;
+    repo.ping().await.map_err(decorate_error(1001))?;
 
     Ok(rweb::reply::reply())
 }
@@ -32,21 +32,21 @@ pub async fn new_exchange(
     #[data] api: impl api::Api,
     #[body] body: bytes::Bytes,
 ) -> Result<impl Reply, Rejection> {
-    let json = std::str::from_utf8(&body).map_err(format_error(1020))?;
-    let bd: BodyData = serde_json::from_str(json).map_err(format_error(1030))?;
+    let json = std::str::from_utf8(&body).map_err(decorate_error(1020))?;
+    let bd: BodyData = serde_json::from_str(json).map_err(decorate_error(1030))?;
 
     let rate = api
         .get_rate(&bd.currency_from, &bd.currency_to, "latest")
         .await
-        .map_err(format_error(1040))?;
+        .map_err(decorate_error(1040))?;
 
     let amount = util::exchange(&bd.currency_from, &bd.currency_to, bd.amount_from, rate)
-        .map_err(format_error(1050))?;
+        .map_err(decorate_error(1050))?;
 
     let exchange = repo
         .add_exchange(bd, amount)
         .await
-        .map_err(format_error(1060))?;
+        .map_err(decorate_error(1060))?;
 
     let reply = rweb::reply::json(&exchange);
 
@@ -58,11 +58,14 @@ pub async fn new_exchange(
 
 pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
     let (code, resp) = match HttpError::resolve_rejection(&err) {
-        HttpError::NotFound(s)
-        | HttpError::InternalServerError(s)
-        | HttpError::MethodNotAllowed(s) => (s, json!({"message": s.canonical_reason() })),
-        HttpError::BadRequest(s, e) => (
-            s,
+        HttpError::NotFound(status_code)
+        | HttpError::InternalServerError(status_code)
+        | HttpError::MethodNotAllowed(status_code) => (
+            status_code,
+            json!({"message": status_code.canonical_reason() }),
+        ),
+        HttpError::BadRequest(status_code, e) => (
+            status_code,
             json!({"message": e.message, "internalCode": e.internal_code }),
         ),
     };

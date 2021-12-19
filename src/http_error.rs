@@ -38,7 +38,7 @@ impl<'a> HttpError<'a> {
     }
 }
 
-pub(crate) fn format_error<E: Display>(code: u16) -> impl Fn(E) -> Rejection {
+pub(crate) fn decorate_error<E: Display>(code: u16) -> impl Fn(E) -> Rejection {
     move |err| {
         let error = ErrorMessage {
             internal_code: Some(code),
