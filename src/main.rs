@@ -2,12 +2,6 @@ use dotenv::dotenv;
 use log::{log, Level};
 use pluto_rs::{init_deps, init_routes};
 
-mod actions;
-mod api;
-mod http_error;
-mod model;
-mod util;
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenv().ok();

@@ -5,6 +5,7 @@ use sqlx::postgres::PgPoolOptions;
 
 use api::{Api, Currency};
 use model::{ExchangeRepository, Repository};
+use actions::{handle_rejection, status, new_exchange};
 
 pub mod actions;
 pub mod api;
@@ -33,9 +34,9 @@ where
     R: Repository,
     A: Api,
 {
-    let health_check = actions::status(repo.clone());
-    let exchanges = actions::new_exchange(repo, api_service)
-        .recover(actions::handle_rejection)
+    let health_check = status(repo.clone());
+    let exchanges = new_exchange(repo, api_service)
+        .recover(handle_rejection)
         .with(rweb::log("exchanges"));
 
     Ok(health_check.or(exchanges))
